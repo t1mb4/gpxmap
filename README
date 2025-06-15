@@ -1,0 +1,13 @@
+How to use:
+
+mkdir tracks; cp path/to/tracks/*.gpx tracks
+OR
+ln -s path/to/tracks/ tracks
+
+./gen.py --genhtml
+./gen.py --gengeodata
+
+
+Place index.html and geo_data.json in docroot on webserver
+???????
+PROFIT
