@@ -1,5 +1,8 @@
 How to use:
 
+Read INSTALL
+then
+
 mkdir tracks; cp path/to/tracks/*.gpx tracks
 OR
 ln -s path/to/tracks/ tracks
