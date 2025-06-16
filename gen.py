@@ -72,7 +72,7 @@ def generate_hybridmap_html():
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>MAP</title>
+    <title>GPXMAP</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
