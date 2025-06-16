@@ -327,4 +327,4 @@ if __name__ == "__main__":
         parser.print_help()
         sys.exit(0)
 
-    main(gen_geodata=args.gengeodata, gen_html=args.genhtml)
+    main(gen_geodata=args.geodata, gen_html=args.html)
