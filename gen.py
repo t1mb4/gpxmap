@@ -72,7 +72,7 @@ def generate_hybridmap_html():
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>GPX Hybrid</title>
+    <title>MAP</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
@@ -80,11 +80,8 @@ def generate_hybridmap_html():
     <style>
         #map { height: 100vh; margin: 0; }
 
-        .leaflet-control-layers {
-            margin: 0;
-        }
+        .leaflet-control-layers { margin: 0; }
 
-        /* стиль для слоя переключателей */
         .leaflet-control-layers-overlays label {
             font-size: 18px;
             line-height: 34px;
@@ -135,7 +132,6 @@ def generate_hybridmap_html():
             transform: translateX(24px);
         }
 
-        /* Большая кнопка геолокации */
         .leaflet-control-locate a {
             width: 60px !important;
             height: 60px !important;
@@ -143,7 +139,6 @@ def generate_hybridmap_html():
             line-height: 60px !important;
         }
 
-        /* Раздвинуть контролы от нижнего края на мобайле */
         .leaflet-bottom.leaflet-left {
             bottom: 120px !important;
             left: 10px;
@@ -153,10 +148,30 @@ def generate_hybridmap_html():
             bottom: 80px !important;
             right: 10px;
         }
-        
+
         .leaflet-control-layers {
             max-height: 240px;
             overflow-y: auto;
+        }
+
+        .leaflet-control-zoom a {
+            width: 70px;
+            height: 70px;
+            line-height: 60px;
+            font-size: 34px;
+        }
+
+        .leaflet-control-custom {
+            margin-top: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .leaflet-control-custom {
+                margin-top: 60px;
+            }
+            .leaflet-control-zoom {
+                margin-top: 60px;
+            }
         }
     </style>
 </head>
@@ -169,8 +184,34 @@ def generate_hybridmap_html():
 <script>
 var map = L.map('map').setView([48.5, 31], 6);
 
-// Base tile layer
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
+var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
+var esriLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18 });
+
+var currentBaseLayer = osmLayer;
+
+var baseMapsControl = L.control({position: 'topright'});
+baseMapsControl.onAdd = function (map) {
+  var div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+  div.innerHTML = `
+    <select id="basemap-select" style="font-size:16px; padding:6px; border:none; background:white; border-radius:4px;">
+      <option value="osm">OSM</option>
+      <option value="esri">ArcGIS Aerial</option>
+    </select>
+  `;
+  L.DomEvent.disableClickPropagation(div);
+  return div;
+};
+baseMapsControl.addTo(map);
+
+document.getElementById('basemap-select').addEventListener('change', function(e) {
+  map.removeLayer(currentBaseLayer);
+  if (e.target.value === 'osm') {
+    currentBaseLayer = osmLayer;
+  } else {
+    currentBaseLayer = esriLayer;
+  }
+  map.addLayer(currentBaseLayer);
+});
 
 // Иконки
 var blueIcon = L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png', iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png', shadowSize:[41,41]});
@@ -244,6 +285,7 @@ setTimeout(() => {
     return html
 
 
+
 def main(gen_geodata=False, gen_html=False):
 
     if gen_geodata:
@@ -276,8 +318,8 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="GPX processor script")
-    parser.add_argument('--gengeodata', action='store_true', help='Generate geodata files')
-    parser.add_argument('--genhtml', action='store_true', help='Generate HTML files')
+    parser.add_argument('--geodata', action='store_true', help='Generate geodata files')
+    parser.add_argument('--html', action='store_true', help='Generate HTML files')
 
     args = parser.parse_args()
 
