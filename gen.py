@@ -174,9 +174,37 @@ def generate_hybridmap_html():
                 margin-top: 60px;
             }
         }
+        #loader {
+            position: fixed;
+            z-index: 1000;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .loader-spinner {
+            border: 12px solid #f3f3f3;
+            border-top: 12px solid #3498db;
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0%   { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
+<div id="loader">
+    <div class="loader-spinner"></div>
+</div>
 <div id="map"></div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -214,18 +242,17 @@ document.getElementById('basemap-select').addEventListener('change', function(e)
   map.addLayer(currentBaseLayer);
 });
 
-// Иконки
 var blueIcon = L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png', iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png', shadowSize:[41,41]});
 var greenIcon = L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png', iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png', shadowSize:[41,41]});
 var yellowIcon = L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png', iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png', shadowSize:[41,41]});
 var redIcon = L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png', shadowSize:[41,41]});
 
-// Слои
-var tracksLayer = L.layerGroup().addTo(map);
-var heatLayerGroup = L.layerGroup().addTo(map);
-var markersLayer = L.layerGroup().addTo(map);
+var tracksLayer = L.layerGroup();
+var heatLayerGroup = L.layerGroup();
+var markersLayer = L.layerGroup();
 
-// Загрузка данных
+document.getElementById('loader').style.display = 'flex';
+
 fetch('geo_data.json.gz')
   .then(response => response.json())
   .then(data => {
@@ -245,6 +272,9 @@ fetch('geo_data.json.gz')
         .bindPopup("<b>" + pt.name + "</b><br><small>" + pt.filename + "</small>")
         .addTo(markersLayer);
     });
+  })
+  .finally(() => {
+    document.getElementById('loader').style.display = 'none';
   });
 
 var overlays = {
