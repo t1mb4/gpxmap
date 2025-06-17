@@ -5,6 +5,7 @@ import re
 import json
 import argparse
 import sys
+import gzip
 
 GPX_DIR = 'tracks'
 OUTPUT_HYBRIDMAP_HTML = 'index.html'
@@ -50,7 +51,7 @@ def save_geodata(tracks, all_points, named_points):
     print("[*] Saving geodata to geo_data.json...")
 
     tracks_data = [{"filename": f, "coords": pts} for pts, f in tracks]
-    heat_points = all_points  # просто список точек для тепловой карты
+    heat_points = all_points
     named_data = [
         {"lat": lat, "lon": lon, "name": name, "filename": filename}
         for lat, lon, name, filename in named_points
@@ -62,10 +63,10 @@ def save_geodata(tracks, all_points, named_points):
         "named_points": named_data
     }
 
-    with open("geo_data.json", "w") as f:
-        json.dump(geo_data, f, indent=2)
+    with gzip.open("geo_data.json.gz", "wt", encoding="utf-8") as gz:
+        json.dump(geo_data, gz)
 
-    print("[+] geo_data.json saved")
+    print("[+] geo_data.json and geo_data.json.gz saved")
 
 def generate_hybridmap_html():
     html = """<!DOCTYPE html>
@@ -225,7 +226,7 @@ var heatLayerGroup = L.layerGroup().addTo(map);
 var markersLayer = L.layerGroup().addTo(map);
 
 // Загрузка данных
-fetch('geo_data.json')
+fetch('geo_data.json.gz')
   .then(response => response.json())
   .then(data => {
     data.tracks.forEach(track => {
