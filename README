@@ -1,16 +1,21 @@
 How to use:
 
-Read INSTALL
-then
-
 mkdir tracks; cp path/to/tracks/*.gpx tracks
 OR
 ln -s path/to/tracks/ tracks
 
-./gen.py --genhtml
-./gen.py --gengeodata
+./gen.py --html --geodata
+
+Place index.html and geo_data.json.gz in docroot on webserver
+
+Create vhost, add this location in vhost:
+
+location = /geo_data.json.gz {
+    gzip off;
+    add_header Content-Encoding gzip;
+    add_header Content-Type application/json;
+}
 
 
-Place index.html and geo_data.json in docroot on webserver
 ???????
 PROFIT
