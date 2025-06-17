@@ -10,7 +10,7 @@ Place index.html and geo_data.json.gz in docroot on webserver
 
 Create vhost, add this location in vhost:
 
-location = /geo_data.json.gz {
+location ~ geo_data.json.gz {
     gzip off;
     add_header Content-Encoding gzip;
     add_header Content-Type application/json;
