@@ -9,14 +9,38 @@ Supports map layer toggling, heatmap control, basemap switching (OSM / ArcGIS), 
 
 <table>
   <tr>
-    <td><img src="docs/img/1.png" alt="screenshot 1" width="300"/></td>
-    <td><img src="docs/img/2.png" alt="screenshot 2" width="300"/></td>
-    <td><img src="docs/img/3.png" alt="screenshot 3" width="300"/></td>
+    <td>
+      <a href="https://raw.githubusercontent.com/t1mb4/gpxmap/master/docs/img/1.png" target="_blank">
+        <img src="docs/img/1.png" alt="screenshot 1" width="300"/>
+      </a>
+    </td>
+    <td>
+      <a href="https://raw.githubusercontent.com/t1mb4/gpxmap/master/docs/img/2.png" target="_blank">
+        <img src="docs/img/2.png" alt="screenshot 2" width="300"/>
+      </a>
+    </td>
+    <td>
+      <a href="https://raw.githubusercontent.com/t1mb4/gpxmap/master/docs/img/3.png" target="_blank">
+        <img src="docs/img/3.png" alt="screenshot 3" width="300"/>
+      </a>
+    </td>
   </tr>
   <tr>
-    <td><img src="docs/img/4.png" alt="screenshot 4" width="300"/></td>
-    <td><img src="docs/img/5.png" alt="screenshot 5" width="300"/></td>
-    <td><img src="docs/img/6.png" alt="screenshot 6" width="300"/></td>
+    <td>
+      <a href="https://raw.githubusercontent.com/t1mb4/gpxmap/master/docs/img/4.png" target="_blank">
+        <img src="docs/img/4.png" alt="screenshot 4" width="300"/>
+      </a>
+    </td>
+    <td>
+      <a href="https://raw.githubusercontent.com/t1mb4/gpxmap/master/docs/img/5.png" target="_blank">
+        <img src="docs/img/5.png" alt="screenshot 5" width="300"/>
+      </a>
+    </td>
+    <td>
+      <a href="https://raw.githubusercontent.com/t1mb4/gpxmap/master/docs/img/6.png" target="_blank">
+        <img src="docs/img/6.png" alt="screenshot 6" width="300"/>
+      </a>
+    </td>
   </tr>
 </table>
 
