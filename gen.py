@@ -141,12 +141,12 @@ def generate_hybridmap_html():
         }
 
         .leaflet-bottom.leaflet-left {
-            bottom: 120px !important;
+            bottom: 90px !important;
             left: 10px;
         }
 
         .leaflet-bottom.leaflet-right {
-            bottom: 80px !important;
+            bottom: 90px !important;
             right: 10px;
         }
 
@@ -249,11 +249,18 @@ var redIcon = L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet
 
 var tracksLayer = L.layerGroup();
 var heatLayerGroup = L.layerGroup();
-var markersLayer = L.layerGroup();
+var todoMarkersLayer = L.layerGroup();
+var otherMarkersLayer = L.layerGroup();
+var dsLayer = L.layerGroup();
+
 
 document.getElementById('loader').style.display = 'flex';
 
-fetch('geo_data.json.gz')
+const basePath = new URL('./', window.location.href).href;
+const geoDataUrl = basePath + 'geo_data.json.gz';
+
+
+fetch(geoDataUrl)
   .then(response => response.json())
   .then(data => {
     data.tracks.forEach(track => {
@@ -268,11 +275,27 @@ fetch('geo_data.json.gz')
       var iconVar = pt.filename.includes("TODO_MAIN") ? greenIcon :
                     pt.filename.includes("WP_WAR_RB") ? redIcon :
                     pt.filename.includes("WP_") ? blueIcon : yellowIcon;
-      L.marker([pt.lat, pt.lon], {icon: iconVar})
-        .bindPopup("<b>" + pt.name + "</b><br><small>" + pt.filename + "</small>")
-        .addTo(markersLayer);
+      var marker = L.marker([pt.lat, pt.lon], {icon: iconVar})
+        .bindPopup(
+          "<b>" + pt.name + "</b><br>" +
+          "<small>" + pt.lat.toFixed(6) + ", " + pt.lon.toFixed(6) + "<br>" +
+          pt.filename + "</small>"
+        );
+      if (pt.filename.includes("TODO")) {
+        marker.addTo(todoMarkersLayer);
+      } else {
+        marker.addTo(otherMarkersLayer);
+      }
     });
-  })
+  });
+
+fetch(basePath + 'deepstate.geojson')
+    .then(res => res.json())
+    .then(ds => {
+      L.geoJson(ds, {
+        style: { color: '#ff0000', weight: 2, fillOpacity: 0.2 }
+      }).addTo(dsLayer);
+    })
   .finally(() => {
     document.getElementById('loader').style.display = 'none';
   });
@@ -280,7 +303,9 @@ fetch('geo_data.json.gz')
 var overlays = {
   "Tracks": tracksLayer,
   "Heatmap": heatLayerGroup,
-  "Markers": markersLayer
+  "POI": otherMarkersLayer,
+  "POI: TODO": todoMarkersLayer,
+  "DeepState": dsLayer
 };
 L.control.layers(null, overlays, {collapsed: false, position: 'bottomright'}).addTo(map);
 
