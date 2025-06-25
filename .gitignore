@@ -1,2 +1,8 @@
+*.gpx
 venv
-tracks
+*.html
+!tracks/.dummy
+tracks/*
+*.geojson
+*.json.gz
+
