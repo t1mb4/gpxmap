@@ -201,9 +201,9 @@ function setUrlParams(params) {
     history.replaceState(null, '', '?' + search);
 }
 const params = getUrlParams();
-let mapLat = params.lat ? parseFloat(params.lat) : 49.055870;
-let mapLng = params.lng ? parseFloat(params.lng) : 32.283325;
-let mapZoom = params.zoom ? parseInt(params.zoom) : 7;
+let mapLat = params.lat ? parseFloat(params.lat) : 44.350127;
+let mapLng = params.lng ? parseFloat(params.lng) : 30.944312;
+let mapZoom = params.zoom ? parseInt(params.zoom) : 5;
 let baseLayerName = params.base || 'osm';
 let activeLayers = params.layers ? params.layers.split(',') : [];
 var map = L.map('map').setView([mapLat, mapLng], mapZoom);
