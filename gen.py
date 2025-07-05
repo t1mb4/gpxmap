@@ -10,16 +10,14 @@ import gzip
 GPX_DIR = 'tracks'
 OUTPUT_HYBRIDMAP_HTML = 'index.html'
 
-POINT_SKIP = 5  # take every Nth point to simplify tracks
+POINT_SKIP = 5
 
 def clean_gpx_namespaces(gpx_content):
-    """Remove XML namespaces and prefixes for easier parsing"""
     cleaned = re.sub(r'\s+xmlns:[^\s=]+="[^"]+"', '', gpx_content)
     cleaned = re.sub(r'\b\w+?:', '', cleaned)
     return cleaned
 
 def parse_gpx_file(file_path):
-    """Parse a GPX file and extract track points and named waypoints"""
     try:
         with open(file_path, 'r') as gpx_file:
             gpx_content = gpx_file.read()
@@ -28,7 +26,6 @@ def parse_gpx_file(file_path):
             tracks = []
             all_points = []
             named_points = []
-
             for track in gpx.tracks:
                 for segment in track.segments:
                     points = [(p.latitude, p.longitude) for p in segment.points]
@@ -36,36 +33,29 @@ def parse_gpx_file(file_path):
                         simplified = points[::POINT_SKIP] if POINT_SKIP > 1 else points
                         tracks.append((simplified, os.path.basename(file_path)))
                         all_points.extend(simplified)
-
             for wpt in gpx.waypoints:
                 if wpt.name:
                     named_points.append((wpt.latitude, wpt.longitude, wpt.name, os.path.basename(file_path)))
-
             return tracks, all_points, named_points
-
     except Exception as e:
         print(f"[!] Error parsing {file_path}: {e}")
         return [], [], []
 
 def save_geodata(tracks, all_points, named_points):
     print("[*] Saving geodata to geo_data.json...")
-
     tracks_data = [{"filename": f, "coords": pts} for pts, f in tracks]
     heat_points = all_points
     named_data = [
         {"lat": lat, "lon": lon, "name": name, "filename": filename}
         for lat, lon, name, filename in named_points
     ]
-
     geo_data = {
         "tracks": tracks_data,
         "heat_points": heat_points,
         "named_points": named_data
     }
-
     with gzip.open("geo_data.json.gz", "wt", encoding="utf-8") as gz:
         json.dump(geo_data, gz)
-
     print("[+] geo_data.json and geo_data.json.gz saved")
 
 def generate_hybridmap_html():
@@ -80,14 +70,11 @@ def generate_hybridmap_html():
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         #map { height: 100vh; margin: 0; }
-
         .leaflet-control-layers { margin: 0; }
-
         .leaflet-control-layers-overlays label {
             font-size: 18px;
             line-height: 34px;
         }
-
         .leaflet-control-layers-overlays input[type="checkbox"] {
             position: absolute;
             opacity: 0;
@@ -95,7 +82,6 @@ def generate_hybridmap_html():
             height: 0;
             width: 0;
         }
-
         .leaflet-control-layers-overlays .switch {
             position: relative;
             display: inline-block;
@@ -103,7 +89,6 @@ def generate_hybridmap_html():
             height: 28px;
             margin-right: 10px;
         }
-
         .leaflet-control-layers-overlays .slider {
             position: absolute;
             cursor: pointer;
@@ -112,7 +97,6 @@ def generate_hybridmap_html():
             transition: .4s;
             border-radius: 34px;
         }
-
         .leaflet-control-layers-overlays .slider:before {
             position: absolute;
             content: "";
@@ -124,48 +108,39 @@ def generate_hybridmap_html():
             transition: .4s;
             border-radius: 50%;
         }
-
         .leaflet-control-layers-overlays input:checked + .slider {
             background-color: #2196F3;
         }
-
         .leaflet-control-layers-overlays input:checked + .slider:before {
             transform: translateX(24px);
         }
-
         .leaflet-control-locate a {
             width: 60px !important;
             height: 60px !important;
             font-size: 28px !important;
             line-height: 60px !important;
         }
-
         .leaflet-bottom.leaflet-left {
             bottom: 90px !important;
             left: 10px;
         }
-
         .leaflet-bottom.leaflet-right {
             bottom: 90px !important;
             right: 10px;
         }
-
         .leaflet-control-layers {
             max-height: 240px;
             overflow-y: auto;
         }
-
         .leaflet-control-zoom a {
             width: 70px;
             height: 70px;
             line-height: 60px;
             font-size: 34px;
         }
-
         .leaflet-control-custom {
             margin-top: 10px;
         }
-
         @media (max-width: 768px) {
             .leaflet-control-custom {
                 margin-top: 60px;
@@ -185,7 +160,6 @@ def generate_hybridmap_html():
             justify-content: center;
             align-items: center;
         }
-        
         .loader-spinner {
             border: 12px solid #f3f3f3;
             border-top: 12px solid #3498db;
@@ -194,7 +168,6 @@ def generate_hybridmap_html():
             height: 80px;
             animation: spin 1s linear infinite;
         }
-        
         @keyframes spin {
             0%   { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -206,18 +179,38 @@ def generate_hybridmap_html():
     <div class="loader-spinner"></div>
 </div>
 <div id="map"></div>
-
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
 <script src="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.js"></script>
 <script>
-var map = L.map('map').setView([48.5, 31], 6);
-
-var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
+function getUrlParams() {
+    const params = {};
+    window.location.search.substring(1).split("&").forEach(function(part) {
+        if (!part) return;
+        let item = part.split("=");
+        let key = decodeURIComponent(item[0]);
+        let value = decodeURIComponent(item[1] || "");
+        params[key] = value;
+    });
+    return params;
+}
+function setUrlParams(params) {
+    const search = Object.entries(params)
+        .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+        .join("&");
+    history.replaceState(null, '', '?' + search);
+}
+const params = getUrlParams();
+let mapLat = params.lat ? parseFloat(params.lat) : 49.055870;
+let mapLng = params.lng ? parseFloat(params.lng) : 32.283325;
+let mapZoom = params.zoom ? parseInt(params.zoom) : 7;
+let baseLayerName = params.base || 'osm';
+let activeLayers = params.layers ? params.layers.split(',') : [];
+var map = L.map('map').setView([mapLat, mapLng], mapZoom);
+var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 });
 var esriLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18 });
-
-var currentBaseLayer = osmLayer;
-
+var currentBaseLayer = baseLayerName === 'esri' ? esriLayer : osmLayer;
+map.addLayer(currentBaseLayer);
 var baseMapsControl = L.control({position: 'topright'});
 baseMapsControl.onAdd = function (map) {
   var div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
@@ -231,7 +224,7 @@ baseMapsControl.onAdd = function (map) {
   return div;
 };
 baseMapsControl.addTo(map);
-
+document.getElementById('basemap-select').value = baseLayerName;
 document.getElementById('basemap-select').addEventListener('change', function(e) {
   map.removeLayer(currentBaseLayer);
   if (e.target.value === 'osm') {
@@ -240,26 +233,20 @@ document.getElementById('basemap-select').addEventListener('change', function(e)
     currentBaseLayer = esriLayer;
   }
   map.addLayer(currentBaseLayer);
+  updateUrl();
 });
-
-var blueIcon = L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png', iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png', shadowSize:[41,41]});
-var greenIcon = L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png', iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png', shadowSize:[41,41]});
-var yellowIcon = L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png', iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png', shadowSize:[41,41]});
-var redIcon = L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png', shadowSize:[41,41]});
-
+var blueIcon = L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png', iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'});
+var greenIcon = L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png', iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'});
+var yellowIcon = L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png', iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'});
+var redIcon = L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', iconSize:[25,41], iconAnchor:[12,41], popupAnchor:[1,-34], shadowUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'});
 var tracksLayer = L.layerGroup();
 var heatLayerGroup = L.layerGroup();
 var todoMarkersLayer = L.layerGroup();
 var otherMarkersLayer = L.layerGroup();
 var dsLayer = L.layerGroup();
-
-
 document.getElementById('loader').style.display = 'flex';
-
 const basePath = new URL('./', window.location.href).href;
 const geoDataUrl = basePath + 'geo_data.json.gz';
-
-
 fetch(geoDataUrl)
   .then(response => response.json())
   .then(data => {
@@ -268,9 +255,7 @@ fetch(geoDataUrl)
         .bindPopup("<small style='font-size:10px'>" + track.filename + "</small>")
         .addTo(tracksLayer);
     });
-
     L.heatLayer(data.heat_points, { radius: 12, blur: 15, maxZoom: 17 }).addTo(heatLayerGroup);
-
     data.named_points.forEach(pt => {
       var iconVar = pt.filename.includes("TODO_MAIN") ? greenIcon :
                     pt.filename.includes("WP_WAR_RB") ? redIcon :
@@ -288,7 +273,6 @@ fetch(geoDataUrl)
       }
     });
   });
-
 fetch(basePath + 'deepstate.geojson')
     .then(res => res.json())
     .then(ds => {
@@ -299,7 +283,6 @@ fetch(basePath + 'deepstate.geojson')
   .finally(() => {
     document.getElementById('loader').style.display = 'none';
   });
-
 var overlays = {
   "Tracks": tracksLayer,
   "Heatmap": heatLayerGroup,
@@ -307,8 +290,10 @@ var overlays = {
   "POI: TODO": todoMarkersLayer,
   "DeepState": dsLayer
 };
+Object.entries(overlays).forEach(([name, layer]) => {
+    if (activeLayers.includes(name)) map.addLayer(layer);
+});
 L.control.layers(null, overlays, {collapsed: false, position: 'bottomright'}).addTo(map);
-
 L.control.locate({
   position: 'bottomleft',
   flyTo: true,
@@ -316,21 +301,35 @@ L.control.locate({
   locateOptions: { enableHighAccuracy: true },
   icon: 'fa fa-crosshairs'
 }).addTo(map);
-
+function updateUrl() {
+    const center = map.getCenter();
+    const zoom = map.getZoom();
+    const layersOn = [];
+    Object.entries(overlays).forEach(([name, l]) => {
+        if (map.hasLayer(l)) layersOn.push(name);
+    });
+    const base = currentBaseLayer === esriLayer ? 'esri' : 'osm';
+    setUrlParams({
+        lat: center.lat.toFixed(6),
+        lng: center.lng.toFixed(6),
+        zoom: zoom,
+        layers: layersOn.join(","),
+        base: base
+    });
+}
+map.on('moveend zoomend', updateUrl);
+map.on('overlayadd overlayremove', updateUrl);
 setTimeout(() => {
   document.querySelectorAll('.leaflet-control-layers-overlays label').forEach(label => {
     var input = label.querySelector('input[type="checkbox"]');
     if (input) {
       var wrapper = document.createElement('label');
       wrapper.classList.add('switch');
-
       var slider = document.createElement('span');
       slider.classList.add('slider');
-
       input.parentNode.insertBefore(wrapper, input);
       wrapper.appendChild(input);
       wrapper.appendChild(slider);
-
       label.insertBefore(wrapper, label.firstChild);
     }
   });
@@ -340,10 +339,7 @@ setTimeout(() => {
 </html>"""
     return html
 
-
-
 def main(gen_geodata=False, gen_html=False):
-
     if gen_geodata:
         all_tracks, all_points, all_named_points = [], [], []
         for root, _, files in os.walk(GPX_DIR, followlinks=True):
@@ -355,14 +351,12 @@ def main(gen_geodata=False, gen_html=False):
                     all_tracks.extend(tracks)
                     all_points.extend(points)
                     all_named_points.extend(named_points)
-    
         print(f"[+] Total points for heatmap: {len(all_points)}")
         print(f"[+] Total named waypoints: {len(all_named_points)}")
         if not all_tracks:
             print("[!] No tracks found. Exiting.")
             return
         save_geodata(all_tracks, all_points, all_named_points)
-
     if gen_html:
         with open(OUTPUT_HYBRIDMAP_HTML, 'w') as f:
             f.write(generate_hybridmap_html())
@@ -372,15 +366,11 @@ def main(gen_geodata=False, gen_html=False):
 
 if __name__ == "__main__":
     import argparse
-
     parser = argparse.ArgumentParser(description="GPX processor script")
     parser.add_argument('--geodata', action='store_true', help='Generate geodata files')
     parser.add_argument('--html', action='store_true', help='Generate HTML files')
-
     args = parser.parse_args()
-
     if not any(vars(args).values()):
         parser.print_help()
         sys.exit(0)
-
     main(gen_geodata=args.geodata, gen_html=args.html)
