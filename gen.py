@@ -181,6 +181,15 @@ def generate_hybridmap_html():
     <div class="loader-spinner"></div>
 </div>
 <div id="map"></div>
+<div id="track-progressbar-container" style="position:fixed;left:0;right:0;bottom:30px;height:32px;display:none;z-index:1001;pointer-events:auto;">
+  <div id="track-progressbar" style="width:90%;margin:0 auto;background:#eee;height:16px;border-radius:8px;position:relative;top:8px;cursor:pointer; border:2px solid #333; box-shadow:0 1px 8px rgba(0,0,0,0.15);">
+    <div id="track-progressbar-fill" style="background:#00ff00;width:0%;height:100%;border-radius:8px;"></div>
+    <div id="track-progressbar-hoverdot" style="position:absolute;top:50%;left:0;width:16px;height:16px;background:#00ff00;border-radius:50%;transform:translate(-50%,-50%);display:none;pointer-events:none;"></div>
+    <div id="track-progressbar-distlabel" style="position:absolute;top:-28px;left:0;transform:translateX(-50%);background:#fff;padding:2px 6px;border-radius:6px;font-size:13px;border:1px solid #333;display:none;white-space:nowrap;z-index:10;box-shadow:0 1px 4px rgba(0,0,0,0.12);"></div>
+    <div id="track-progressbar-totaldist" style="position:absolute;top:22px;right:0;font-size:13px;color:#222;background:#fff;padding:2px 8px;border-radius:6px;border:1px solid #333;box-shadow:0 1px 4px rgba(0,0,0,0.10);"></div>
+  </div>
+</div>
+
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
 <script src="https://unpkg.com/leaflet.locatecontrol/dist/L.Control.Locate.min.js"></script>
@@ -246,6 +255,85 @@ var heatLayerGroup = L.layerGroup();
 var todoMarkersLayer = L.layerGroup();
 var otherMarkersLayer = L.layerGroup();
 var dsLayer = L.layerGroup();
+var selectedTrack = null;
+var selectedTrackOpts = { color: '#0000FF', weight: 4 };
+var defaultTrackOpts = { color: '#ff0000', weight: 3 };
+var selectedTrackCoords = null;
+var trackProgressbar = document.getElementById('track-progressbar');
+var trackProgressbarContainer = document.getElementById('track-progressbar-container');
+var trackProgressbarFill = document.getElementById('track-progressbar-fill');
+var trackProgressbarHoverdot = document.getElementById('track-progressbar-hoverdot');
+var movingMarker = null;
+function haversine(latlng1, latlng2) {
+  var R = 6371; // km
+  var dLat = (latlng2[0] - latlng1[0]) * Math.PI / 180;
+  var dLon = (latlng2[1] - latlng1[1]) * Math.PI / 180;
+  var lat1 = latlng1[0] * Math.PI / 180;
+  var lat2 = latlng2[0] * Math.PI / 180;
+  var a = Math.sin(dLat/2)*Math.sin(dLat/2) +
+          Math.sin(dLon/2)*Math.sin(dLon/2)*Math.cos(lat1)*Math.cos(lat2);
+  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+function computeCumulativeDistances(coords) {
+  var dists = [0];
+  for (var i = 1; i < coords.length; ++i) {
+    var d = haversine(coords[i-1], coords[i]);
+    dists.push(dists[i-1] + d);
+  }
+  return dists;
+}
+var cumulativeDistances = null;
+function showProgressbar(coords) {
+  selectedTrackCoords = coords;
+  cumulativeDistances = computeCumulativeDistances(coords);
+  trackProgressbarContainer.style.display = 'block';
+  trackProgressbarFill.style.width = '0%';
+  trackProgressbarHoverdot.style.display = 'none';
+  document.getElementById('track-progressbar-distlabel').style.display = 'none';
+  var totalDist = cumulativeDistances.length > 0 ? cumulativeDistances[cumulativeDistances.length-1] : 0;
+  document.getElementById('track-progressbar-totaldist').textContent = "Total distance: " + totalDist.toFixed(2) + " km";
+  if (movingMarker) {
+    map.removeLayer(movingMarker);
+    movingMarker = null;
+  }
+}
+function hideProgressbar() {
+  trackProgressbarContainer.style.display = 'none';
+  selectedTrackCoords = null;
+  if (movingMarker) {
+    map.removeLayer(movingMarker);
+    movingMarker = null;
+  }
+}
+trackProgressbar.addEventListener('mousemove', function(e) {
+  if (!selectedTrackCoords || !cumulativeDistances) return;
+  var rect = trackProgressbar.getBoundingClientRect();
+  var percent = (e.clientX - rect.left) / rect.width;
+  percent = Math.max(0, Math.min(1, percent));
+  var idx = Math.round(percent * (selectedTrackCoords.length - 1));
+  var latlng = selectedTrackCoords[idx];
+  trackProgressbarHoverdot.style.display = 'block';
+  trackProgressbarHoverdot.style.left = (percent * 100) + '%';
+  var distlabel = document.getElementById('track-progressbar-distlabel');
+  distlabel.style.display = 'block';
+  distlabel.style.left = (percent * 100) + '%';
+  var dist = cumulativeDistances[idx];
+  var total = cumulativeDistances[cumulativeDistances.length-1];
+  distlabel.textContent = dist.toFixed(2) + ' km of ' + total.toFixed(2) + ' km';
+  if (!movingMarker) {
+    movingMarker = L.circleMarker(latlng, {radius: 8, color: '#00ff00', fillColor: '#00ff00', fillOpacity: 0.8});
+    movingMarker.addTo(map);
+  } else {
+    movingMarker.setLatLng(latlng);
+  }
+});
+trackProgressbar.addEventListener('mouseleave', function() {
+  trackProgressbarHoverdot.style.display = 'none';
+  var distlabel = document.getElementById('track-progressbar-distlabel');
+  distlabel.style.display = 'none';
+  if (movingMarker && selectedTrackCoords) movingMarker.setLatLng(selectedTrackCoords[0]);
+});
 document.getElementById('loader').style.display = 'flex';
 const basePath = new URL('./', window.location.href).href;
 const geoDataUrl = basePath + 'geo_data.json.gz?v=""" + str(geo_data_mtime) + """';
@@ -253,10 +341,23 @@ fetch(geoDataUrl)
   .then(response => response.json())
   .then(data => {
     data.tracks.forEach(track => {
-      L.polyline(track.coords, { color: '#ff0000', weight: 3 })
-        .bindPopup("<small style='font-size:10px'>" + track.filename + "</small>")
-        .addTo(tracksLayer);
-    });
+      var polyline = L.polyline(track.coords, defaultTrackOpts)
+        .bindPopup("<small style='font-size:10px'>" + track.filename + "</small>");
+      polyline.on('click', function(e) {
+        if (selectedTrack) {
+          selectedTrack.setStyle(defaultTrackOpts);
+          selectedTrack.bringToBack();
+        }
+        polyline.setStyle(selectedTrackOpts);
+        polyline.bringToFront();
+        selectedTrack = polyline;
+        polyline.openPopup(e.latlng);
+        L.DomEvent.stopPropagation(e);
+        selectedTrackCoords = track.coords;
+        showProgressbar(track.coords);
+      });
+      tracksLayer.addLayer(polyline);
+});
     L.heatLayer(data.heat_points, { radius: 12, blur: 15, maxZoom: 17 }).addTo(heatLayerGroup);
     data.named_points.forEach(pt => {
       var iconVar = pt.filename.includes("TODO_MAIN") ? greenIcon :
@@ -321,6 +422,14 @@ function updateUrl() {
 }
 map.on('moveend zoomend', updateUrl);
 map.on('overlayadd overlayremove', updateUrl);
+map.on('click', function() {
+  if (selectedTrack) {
+    selectedTrack.setStyle(defaultTrackOpts);
+    selectedTrack.bringToBack();
+    selectedTrack = null;
+    hideProgressbar();
+  }
+});
 setTimeout(() => {
   document.querySelectorAll('.leaflet-control-layers-overlays label').forEach(label => {
     var input = label.querySelector('input[type="checkbox"]');
