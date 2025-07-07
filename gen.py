@@ -306,6 +306,30 @@ function hideProgressbar() {
     movingMarker = null;
   }
 }
+function handleProgressTouch(e) {
+  if (!selectedTrackCoords || !cumulativeDistances) return;
+  var rect = trackProgressbar.getBoundingClientRect();
+  var touch = e.touches[0];
+  var percent = (touch.clientX - rect.left) / rect.width;
+  percent = Math.max(0, Math.min(1, percent));
+  var idx = Math.round(percent * (selectedTrackCoords.length - 1));
+  var latlng = selectedTrackCoords[idx];
+  trackProgressbarHoverdot.style.display = 'block';
+  trackProgressbarHoverdot.style.left = (percent * 100) + '%';
+  var distlabel = document.getElementById('track-progressbar-distlabel');
+  distlabel.style.display = 'block';
+  distlabel.style.left = (percent * 100) + '%';
+  var dist = cumulativeDistances[idx];
+  var total = cumulativeDistances[cumulativeDistances.length-1];
+  distlabel.textContent = dist.toFixed(2) + ' km of ' + total.toFixed(2) + ' km';
+  if (!movingMarker) {
+    movingMarker = L.circleMarker(latlng, {radius: 8, color: '#00ff00', fillColor: '#00ff00', fillOpacity: 0.8});
+    movingMarker.addTo(map);
+  } else {
+    movingMarker.setLatLng(latlng);
+  }
+  e.preventDefault();
+}
 trackProgressbar.addEventListener('mousemove', function(e) {
   if (!selectedTrackCoords || !cumulativeDistances) return;
   var rect = trackProgressbar.getBoundingClientRect();
@@ -334,6 +358,10 @@ trackProgressbar.addEventListener('mouseleave', function() {
   distlabel.style.display = 'none';
   if (movingMarker && selectedTrackCoords) movingMarker.setLatLng(selectedTrackCoords[0]);
 });
+trackProgressbar.addEventListener('touchstart', handleProgressTouch, {passive: false});
+trackProgressbar.addEventListener('touchmove', handleProgressTouch, {passive: false});
+trackProgressbar.addEventListener('touchend', function() {});
+
 document.getElementById('loader').style.display = 'flex';
 const basePath = new URL('./', window.location.href).href;
 const geoDataUrl = basePath + 'geo_data.json.gz?v=""" + str(geo_data_mtime) + """';
