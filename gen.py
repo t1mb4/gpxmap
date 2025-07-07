@@ -59,6 +59,8 @@ def save_geodata(tracks, all_points, named_points):
     print("[+] geo_data.json and geo_data.json.gz saved")
 
 def generate_hybridmap_html():
+    geo_data_mtime = int(os.path.getmtime('geo_data.json.gz'))
+    deepstate_mtime = int(os.path.getmtime('deepstate.geojson'))
     html = """<!DOCTYPE html>
 <html>
 <head>
@@ -246,7 +248,7 @@ var otherMarkersLayer = L.layerGroup();
 var dsLayer = L.layerGroup();
 document.getElementById('loader').style.display = 'flex';
 const basePath = new URL('./', window.location.href).href;
-const geoDataUrl = basePath + 'geo_data.json.gz';
+const geoDataUrl = basePath + 'geo_data.json.gz?v=""" + str(geo_data_mtime) + """';
 fetch(geoDataUrl)
   .then(response => response.json())
   .then(data => {
@@ -273,7 +275,7 @@ fetch(geoDataUrl)
       }
     });
   });
-fetch(basePath + 'deepstate.geojson')
+fetch(basePath + 'deepstate.geojson?v=""" + str(deepstate_mtime) + """')
     .then(res => res.json())
     .then(ds => {
       L.geoJson(ds, {
