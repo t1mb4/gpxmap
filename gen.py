@@ -296,7 +296,7 @@ function showProgressbar(coords) {
   trackProgressbarHoverdot.style.display = 'none';
   document.getElementById('track-progressbar-distlabel').style.display = 'none';
   var totalDist = cumulativeDistances.length > 0 ? cumulativeDistances[cumulativeDistances.length-1] : 0;
-  document.getElementById('track-progressbar-totaldist').textContent = "Total distance: " + totalDist.toFixed(2) + " km";
+  document.getElementById('track-progressbar-totaldist').textContent = "File: " + selectedTrackFilename + " | Total distance: " + totalDist.toFixed(2) + " km";
   if (movingMarker) {
     map.removeLayer(movingMarker);
     movingMarker = null;
@@ -416,6 +416,12 @@ fetch(geoDataUrl)
           "<small>" + pt.lat.toFixed(6) + ", " + pt.lon.toFixed(6) + "<br>" +
           pt.filename + "</small>"
         );
+      marker.on('mouseover', function(e) {
+        marker.openPopup();
+      });
+      marker.on('mouseout', function(e) {
+        marker.closePopup();
+      });
       if (pt.filename.includes("TODO")) {
         marker.addTo(todoMarkersLayer);
       } else {
