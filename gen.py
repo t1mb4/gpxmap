@@ -23,8 +23,8 @@ def parse_gpx_file(file_path):
             gpx_content = gpx_file.read()
             gpx_content = clean_gpx_namespaces(gpx_content)
             gpx = gpxpy.parse(gpx_content)
-            all_coords = []
             segments = []
+            all_coords = []
             for track in gpx.tracks:
                 for segment in track.segments:
                     points = [(p.latitude, p.longitude) for p in segment.points]
@@ -44,7 +44,6 @@ def parse_gpx_file(file_path):
     except Exception as e:
         print(f"[!] Error parsing {file_path}: {e}")
         return None, [], []
-
 
 def save_geodata(tracks, all_points, named_points):
     print("[*] Saving geodata to geo_data.json...")
@@ -370,26 +369,41 @@ trackProgressbar.addEventListener('touchend', function() {});
 document.getElementById('loader').style.display = 'flex';
 const basePath = new URL('./', window.location.href).href;
 const geoDataUrl = basePath + 'geo_data.json.gz?v=""" + str(geo_data_mtime) + """';
+const trackPolylinesByFilename = {};
 fetch(geoDataUrl)
   .then(response => response.json())
   .then(data => {
+
     data.tracks.forEach(track => {
-      var polyline = L.polyline(track.coords, defaultTrackOpts)
-        .bindPopup("<small style='font-size:10px'>" + track.filename + "</small>");
-      polyline.on('click', function(e) {
-        if (selectedTrack) {
-          selectedTrack.setStyle(defaultTrackOpts);
-          selectedTrack.bringToBack();
-        }
-        polyline.setStyle(selectedTrackOpts);
-        polyline.bringToFront();
-        selectedTrack = polyline;
-        polyline.openPopup(e.latlng);
-        L.DomEvent.stopPropagation(e);
-        selectedTrackCoords = track.coords;
-        showProgressbar(track.coords);
-      });
-      tracksLayer.addLayer(polyline);
+      trackPolylinesByFilename[track.filename] = [];
+      track.segments.forEach(segment => {
+        var polyline = L.polyline(segment, defaultTrackOpts)
+          .bindPopup("<small style='font-size:10px'>" + track.filename + "</small>");
+        trackPolylinesByFilename[track.filename].push(polyline);
+    
+        polyline.on('click', function(e) {
+          Object.values(trackPolylinesByFilename).forEach(polylines => {
+            polylines.forEach(pl => {
+              pl.setStyle(defaultTrackOpts);
+              pl.bringToBack();
+            });
+          });
+          trackPolylinesByFilename[track.filename].forEach(pl => {
+            pl.setStyle(selectedTrackOpts);
+            pl.bringToFront();
+          });
+    
+          polyline.openPopup(e.latlng);
+    
+          selectedTrack = polyline;
+          selectedTrackCoords = track.coords;
+          showProgressbar(track.coords);
+    
+          L.DomEvent.stopPropagation(e);
+        });
+
+    tracksLayer.addLayer(polyline);
+  });
 });
     L.heatLayer(data.heat_points, { radius: 12, blur: 15, maxZoom: 17 }).addTo(heatLayerGroup);
     data.named_points.forEach(pt => {
