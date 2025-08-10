@@ -23,27 +23,32 @@ def parse_gpx_file(file_path):
             gpx_content = gpx_file.read()
             gpx_content = clean_gpx_namespaces(gpx_content)
             gpx = gpxpy.parse(gpx_content)
-            tracks = []
-            all_points = []
-            named_points = []
+            all_coords = []
+            segments = []
             for track in gpx.tracks:
                 for segment in track.segments:
                     points = [(p.latitude, p.longitude) for p in segment.points]
                     if points:
                         simplified = points[::POINT_SKIP] if POINT_SKIP > 1 else points
-                        tracks.append((simplified, os.path.basename(file_path)))
-                        all_points.extend(simplified)
+                        segments.append(simplified)
+                        all_coords.extend(simplified)
+            named_points = []
             for wpt in gpx.waypoints:
                 if wpt.name:
                     named_points.append((wpt.latitude, wpt.longitude, wpt.name, os.path.basename(file_path)))
-            return tracks, all_points, named_points
+            return {
+                "filename": os.path.basename(file_path),
+                "coords": all_coords,
+                "segments": segments
+            }, all_coords, named_points
     except Exception as e:
         print(f"[!] Error parsing {file_path}: {e}")
-        return [], [], []
+        return None, [], []
+
 
 def save_geodata(tracks, all_points, named_points):
     print("[*] Saving geodata to geo_data.json...")
-    tracks_data = [{"filename": f, "coords": pts} for pts, f in tracks]
+    tracks_data = [t for t in tracks if t is not None]
     heat_points = all_points
     named_data = [
         {"lat": lat, "lon": lon, "name": name, "filename": filename}
@@ -486,10 +491,11 @@ def main(gen_geodata=False, gen_html=False):
                 if filename.lower().endswith('.gpx'):
                     file_path = os.path.join(root, filename)
                     print(f"[*] Processing {file_path}")
-                    tracks, points, named_points = parse_gpx_file(file_path)
-                    all_tracks.extend(tracks)
-                    all_points.extend(points)
-                    all_named_points.extend(named_points)
+                    track, points, named_points = parse_gpx_file(file_path)
+                    if track:
+                        all_tracks.append(track)
+                        all_points.extend(points)
+                        all_named_points.extend(named_points)
         print(f"[+] Total points for heatmap: {len(all_points)}")
         print(f"[+] Total named waypoints: {len(all_named_points)}")
         if not all_tracks:
