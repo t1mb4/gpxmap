@@ -259,7 +259,7 @@ var heatLayerGroup = L.layerGroup();
 var todoMarkersLayer = L.layerGroup();
 var otherMarkersLayer = L.layerGroup();
 var dsLayer = L.layerGroup();
-var selectedTrack = null;
+var selectedTrackFilename = null;
 var selectedTrackOpts = { color: '#0000FF', weight: 4 };
 var defaultTrackOpts = { color: '#ff0000', weight: 3 };
 var selectedTrackCoords = null;
@@ -395,7 +395,7 @@ fetch(geoDataUrl)
     
           polyline.openPopup(e.latlng);
     
-          selectedTrack = polyline;
+          selectedTrackFilename = track.filename;
           selectedTrackCoords = track.coords;
           showProgressbar(track.coords);
     
@@ -470,10 +470,12 @@ function updateUrl() {
 map.on('moveend zoomend', updateUrl);
 map.on('overlayadd overlayremove', updateUrl);
 map.on('click', function() {
-  if (selectedTrack) {
-    selectedTrack.setStyle(defaultTrackOpts);
-    selectedTrack.bringToBack();
-    selectedTrack = null;
+  if (selectedTrackFilename) {
+    trackPolylinesByFilename[selectedTrackFilename].forEach(pl => {
+      pl.setStyle(defaultTrackOpts);
+      pl.bringToBack();
+    });
+    selectedTrackFilename = null;
     hideProgressbar();
   }
 });
